@@ -13,6 +13,7 @@ namespace CycleTesting
         // declare the vars for lists for pv and tv values (not init yet)
         private List<int> pvValues;
         private List<int> tvValues;
+        private List<int> avValues;
 
         // create the timers 
         private Timer timer; // 'simple' timer
@@ -27,6 +28,7 @@ namespace CycleTesting
             // now they are instantiated using 'new' which allocates memory and opens empty list
             pvValues = new List<int>();
             tvValues = new List<int>();
+            avValues = new List<int>();
 
             InitializeTimer(); // init the primary timer 
             progressTimer.Tick += new EventHandler(progressTimer_Tick); // attach event handler to tick for bar timer
@@ -91,6 +93,15 @@ namespace CycleTesting
                     tvValues.Add(tvValue);
                 }
             }
+            // check for third val
+            else if (incomingData.StartsWith("AV: "))
+            {
+                string dataValue = incomingData.Substring(4);
+                if (int.TryParse(dataValue, out int avValue))
+                {
+                    avValues.Add(avValue);
+                }
+            }
         }
 
         // Once the 'tick' event is completed this is called which stops the data collection
@@ -115,9 +126,9 @@ namespace CycleTesting
                 using (StreamWriter sw = new StreamWriter(csvFilePath)) // uses .NET library function
                 {
                     // Define headers ( this is to simplify python data analysis in future )
-                    sw.WriteLine("PV,TV");
+                    sw.WriteLine("PV,TV,AV");
                     // check how many items are both strings and then loop for max of that
-                    for (int i = 0; i < Math.Max(pvValues.Count, tvValues.Count); i++)
+                    for (int i = 0; i < Math.Max(Math.Max(pvValues.Count, tvValues.Count), avValues.Count); i++)
                     {
                         // define a variable for the values but also:
                         // like most seemingly over complicated stuff its here to avoid error
@@ -127,9 +138,10 @@ namespace CycleTesting
                         // TLDR: stops csv aligment screwing up
                         var pvValue = i < pvValues.Count ? pvValues[i].ToString() : "";
                         var tvValue = i < tvValues.Count ? tvValues[i].ToString() : "";
+                        var avValue = i < avValues.Count ? avValues[i].ToString() : "";
 
                         // print line 
-                        sw.WriteLine($"{pvValue},{tvValue}");
+                        sw.WriteLine($"{pvValue},{tvValue},{avValue}");
                     }
                 }
             }
@@ -153,6 +165,7 @@ namespace CycleTesting
                     // cleanse the inputs
                     pvValues.Clear();
                     tvValues.Clear();
+                    avValues.Clear();
 
                     // begin data collection!
                     InitializeSerialPort();
